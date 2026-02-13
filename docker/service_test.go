@@ -170,6 +170,8 @@ func TestCreateSecretRevealService(t *testing.T) {
 	require.Equal(t, "reveal-svc", spec.Annotations.Name)
 	require.Equal(t, "true", spec.Annotations.Labels["swarmcli.temporary"])
 	require.Equal(t, "reveal-secret", spec.Annotations.Labels["swarmcli.purpose"])
+	require.NotEmpty(t, spec.Annotations.Labels["swarmcli.created-at"])
+	require.Equal(t, "60", spec.Annotations.Labels["swarmcli.ttl"])
 	require.Equal(t, "alpine:latest", spec.TaskTemplate.ContainerSpec.Image)
 	require.Len(t, spec.TaskTemplate.ContainerSpec.Secrets, 1)
 	require.Equal(t, "secret-id-123", spec.TaskTemplate.ContainerSpec.Secrets[0].SecretID)

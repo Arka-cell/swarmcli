@@ -592,6 +592,13 @@ func CreateSecretRevealService(serviceName, secretID, secretName string) swarm.S
 
 // CreateSecretRevealServiceWithImage creates a temporary service spec to reveal a secret.
 // imageOverride is mainly intended for debugging error-handling paths.
+//
+// Labels enable cleanup of orphaned services (e.g. after SIGKILL):
+//   - swarmcli.temporary=true — marks the service as ephemeral
+//   - swarmcli.purpose=reveal-secret — identifies the feature that created it
+//   - swarmcli.created-at — unix timestamp of creation
+//   - swarmcli.ttl=60 — max lifetime in seconds; a reaper may remove services
+//     where created-at + ttl < now
 func CreateSecretRevealServiceWithImage(serviceName, imageOverride, secretID, secretName string) swarm.ServiceSpec {
 	image := imageOverride
 	if image == "" {
@@ -601,8 +608,10 @@ func CreateSecretRevealServiceWithImage(serviceName, imageOverride, secretID, se
 		Annotations: swarm.Annotations{
 			Name: serviceName,
 			Labels: map[string]string{
-				"swarmcli.temporary": "true",
-				"swarmcli.purpose":   "reveal-secret",
+				"swarmcli.temporary":  "true",
+				"swarmcli.purpose":    "reveal-secret",
+				"swarmcli.created-at": fmt.Sprintf("%d", time.Now().Unix()),
+				"swarmcli.ttl":        "60",
 			},
 		},
 		TaskTemplate: swarm.TaskSpec{
