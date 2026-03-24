@@ -32,6 +32,10 @@ func (m *Model) View() string {
 	if m.currentView.Name() == view.NameHelp {
 		globalHelp = []helpbar.HelpEntry{}
 	}
+	// Suppress global keys when the view captures all input (e.g., shell).
+	if vc, ok := m.currentView.(interface{ CapturesInput() bool }); ok && vc.CapturesInput() {
+		globalHelp = []helpbar.HelpEntry{}
+	}
 
 	// Check if current view has errors for logo color
 	hasError := m.currentView.HasErrors()
