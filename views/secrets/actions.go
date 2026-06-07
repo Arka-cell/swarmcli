@@ -386,9 +386,9 @@ func openEditorForContentCmd(initialData string) tea.Cmd {
 	cmd.Stderr = os.Stderr
 
 	return tea.ExecProcess(cmd, func(err error) tea.Msg {
-		// Clean up temp file
+		// Clean up temp file securely
 		defer func(name string) {
-			_ = os.Remove(name)
+			_ = secureWipeAndRemove(name)
 		}(tmp.Name())
 
 		if err != nil {
@@ -406,4 +406,30 @@ func openEditorForContentCmd(initialData string) tea.Cmd {
 		l().Infoln("Read new data, length:", len(newData))
 		return editorContentMsg{Content: string(newData)}
 	})
+}
+
+// secureWipeAndRemove overwrites the file with zeroes before deleting it to prevent recovery of secret data from disk.
+func secureWipeAndRemove(name string) error {
+	defer os.Remove(name)
+
+	file, err := os.OpenFile(name, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	size := info.Size()
+	if size > 0 {
+		zeroes := make([]byte, size)
+		if _, err := file.Write(zeroes); err != nil {
+			return err
+		}
+		_ = file.Sync()
+	}
+	return nil
 }
